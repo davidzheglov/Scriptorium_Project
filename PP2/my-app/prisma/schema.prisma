@@ -15,7 +15,7 @@ model User {
   passwordHash String   // Store hashed passwords
   firstName    String
   lastName     String
-  avatar       String?  // Optional avatar URL
+  avatar       String   @default("/uploads/default.png") // Default avatar
   phoneNumber  String?  // Optional phone number
   role         String   @default("USER")  // Default to regular USER role
   createdAt    DateTime @default(now())
