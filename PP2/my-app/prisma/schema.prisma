@@ -1,0 +1,110 @@
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String   // Store hashed passwords
+  firstName    String
+  lastName     String
+  avatar       String?  // Optional avatar URL
+  phoneNumber  String?  // Optional phone number
+  role         String   @default("USER")  // Default to regular USER role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  templates    Template[] // Removed relational integrity constraints
+  blogPosts    BlogPost[]
+  comments     Comment[]
+  reports      Report[]
+  votes        Vote[]    // New relation for votes
+}
+
+model Template {
+  id          Int      @id @default(autoincrement())
+  title       String
+  code        String   // The code content
+  explanation String?  // Optional explanation
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  blogPosts   BlogPost[] // Adjusted relation field
+  tags        Tag[] @relation("TemplateTags") // Many-to-many relation to tags
+}
+
+model Tag {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique // Name of the tag
+  templates Template[] @relation("TemplateTags") // Many-to-many relation to templates
+  blogPosts BlogPost[] @relation("BlogPostTags") // Many-to-many relation to blog posts
+}
+
+model BlogPost {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  templates   Template[] // Adjusted relation field
+  comments    Comment[] // Comments associated with this post
+  reports     Report[]  // Reports for inappropriate content
+  hidden      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  tags        Tag[] @relation("BlogPostTags") // Many-to-many relation to tags
+  upvotes     Int       @default(0)
+  downvotes   Int       @default(0)
+  votes       Vote[]    // New relation for votes
+}
+
+model Comment {
+  id         Int      @id @default(autoincrement())
+  content    String
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  blogPost   BlogPost @relation(fields: [blogPostId], references: [id])
+  blogPostId Int
+  parentId   Int?     // Optional parent comment ID for replies
+  reports    Report[] // Reports associated with this comment
+  hidden     Boolean  @default(false) // New field
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  upvotes    Int      @default(0)
+  downvotes  Int      @default(0)
+  votes      Vote[]    // New relation for votes
+}
+
+
+model Report {
+  id         Int      @id @default(autoincrement())
+  reason     String   // Explanation of the report
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  blogPost   BlogPost? @relation(fields: [blogPostId], references: [id])
+  blogPostId Int?     // Optional if the report is for a blog post
+  comment    Comment? @relation(fields: [commentId], references: [id])
+  commentId  Int?     // Optional if the report is for a comment
+  createdAt  DateTime @default(now())
+}
+
+model Vote {
+  id         Int      @id @default(autoincrement())
+  type       String   // "upvote" or "downvote"
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  blogPost   BlogPost? @relation(fields: [blogPostId], references: [id])
+  blogPostId Int?      // Optional if the vote is for a blog post
+  comment    Comment?  @relation(fields: [commentId], references: [id])
+  commentId  Int?      // Optional if the vote is for a comment
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, blogPostId, commentId]) // Ensures unique vote per user per item
+}
