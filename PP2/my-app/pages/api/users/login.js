@@ -39,6 +39,8 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         token,
+        firstname: user.firstName,
+        lastname: user.lastName,
       });
       } catch (error) {
             console.error(error);
