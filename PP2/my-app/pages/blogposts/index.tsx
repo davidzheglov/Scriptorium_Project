@@ -9,6 +9,8 @@ interface BlogPost {
   tags: { name: string }[];
   user?: { firstName: string; lastName: string; avatar: string };
   createdAt: string;
+  upvotes: number;
+  downvotes: number;
 }
 
 interface BlogPostsPageProps {
@@ -29,6 +31,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   };
 };
 
+
+
 export default function BlogPostsPage({ token }: BlogPostsPageProps) {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,9 +44,9 @@ export default function BlogPostsPage({ token }: BlogPostsPageProps) {
   const fetchBlogPosts = async (page: number) => {
     setLoading(true);
     try {
-      if (!token) {
-        throw new Error('Authentication token is missing');
-      }
+      // if (!token) {
+      //   throw new Error('Authentication token is missing');
+      // }
 
       console.log('Fetching blog posts with token:', token); // Debug statement
 
@@ -83,6 +87,58 @@ export default function BlogPostsPage({ token }: BlogPostsPageProps) {
     console.log('Updated blogPosts state:', blogPosts);
   }, [blogPosts]);
 
+
+  const handleUpvote = async (postId: number) => {
+    try {
+      await fetch(`/api/votes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: postId, type: 'upvote', itemType: 'blogPost' }),
+      });
+      fetchBlogPosts(currentPage); // Refresh the posts after voting
+    } catch (error) {
+      console.error('Upvote failed:', error);
+    }
+  };
+  
+  const handleDownvote = async (postId: number) => {
+    try {
+      await fetch(`/api/votes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: postId, type: 'downvote', itemType: 'blogPost' }),
+      });
+      fetchBlogPosts(currentPage); // Refresh the posts after voting
+    } catch (error) {
+      console.error('Downvote failed:', error);
+    }
+  };
+
+
+  // const handleEdit = (postId: number) => {
+  //   router.push(`/blogposts/${postId}`);
+  // };
+
+  const handleDelete = async (postId: number) => {
+    try {
+      await fetch(`/api/blogs/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      fetchBlogPosts(currentPage);
+    } catch (error) {
+      console.error('Delete failed:', error);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <header className="mb-6 flex justify-between items-center">
@@ -121,8 +177,16 @@ export default function BlogPostsPage({ token }: BlogPostsPageProps) {
                     {new Date(post.createdAt).toLocaleDateString()}
                   </p>
                 </div>
+                <div className="flex space-x-2">
+                  
+                    <button onClick={() => handleDelete(post.id)}>🗑️</button>
+                </div>
               </div>
               <p className="mt-2">{post.description}</p>
+              <div className="flex items-center space-x-4 mt-2">
+                <button onClick={() => handleUpvote(post.id)}>👍 {post.upvotes}</button>
+                <button onClick={() => handleDownvote(post.id)}>👎 {post.downvotes}</button>
+              </div>
             </div>
           ))}
         </div>

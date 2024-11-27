@@ -32,7 +32,11 @@ async function handleGetBlogPostById(res, id) {
         user: { select: { firstName: true, lastName: true, avatar: true } },
         tags: true,
         templates: true,
-        comments: true,
+        comments: {
+          include: {
+            user: { select: { firstName: true, lastName: true, avatar: true } },
+          },
+        },
       },
     });
 

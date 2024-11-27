@@ -4,10 +4,6 @@ import { authenticateUser } from '@/middleware/auth';
 export default async function handler(req, res) {
   const user = await authenticateUser(req);
 
-  if (!user) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
   switch (req.method) {
     case 'POST':
       return handleCreateBlogPost(req, res, user);
@@ -21,6 +17,9 @@ export default async function handler(req, res) {
 
 // Create a new blog post
 async function handleCreateBlogPost(req, res, user) {
+  if (!user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
   const { title, description, tags, templateIds } = req.body;
 
   try {
