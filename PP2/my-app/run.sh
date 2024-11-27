@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Run the server
-npm start
+npm run dev
 
 
 

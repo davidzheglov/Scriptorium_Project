@@ -2,9 +2,24 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
+echo "Building Docker images for sandboxed languages..."
+docker build -t sandbox-python:3.10 -f pages/api/code/DockerFiles/Python/Dockerfile .
+docker build -t sandbox-java:17 -f pages/api/code/DockerFiles/Java/Dockerfile .
+docker build -t sandbox-node:18 -f pages/api/code/DockerFiles/JavaScript/Dockerfile .
+docker build -t sandbox-c:latest -f pages/api/code/DockerFiles/C/Dockerfile .
+docker build -t sandbox-cpp:latest -f pages/api/code/DockerFiles/Cpp/Dockerfile .
+docker build -t sandbox-go:1.20 -f pages/api/code/DockerFiles/Go/Dockerfile .
+docker build -t sandbox-ruby:3.2 -f pages/api/code/DockerFiles/Ruby/Dockerfile .
+docker build -t sandbox-php:8.2 -f pages/api/code/DockerFiles/Php/Dockerfile .
+docker build -t sandbox-rust:1.73 -f pages/api/code/DockerFiles/Rust/Dockerfile .
+docker build -t sandbox-dart:stable -f pages/api/code/DockerFiles/Dart/Dockerfile .
+echo "Docker images built successfully."
+
 # Install dependencies
 echo "Installing dependencies..."
 npm install
+
+npm install formidable
 
 # Starting Next.js project
 echo "Starting Next.js project..."

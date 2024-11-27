@@ -11,14 +11,33 @@ interface Template {
     title: string;
     explanation: string;
     tags: Tag[];
-    code: string; // Added code field to the Template interface
+    code: string;
 }
 
 const TemplatesPage = () => {
     const [templates, setTemplates] = useState<Template[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [filteredTemplates, setFilteredTemplates] = useState<Template[]>([]);
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Track login status
+    const [showPopup, setShowPopup] = useState<boolean>(false); // For showing the popup
     const router = useRouter(); // For navigation
+
+    // Fetch login status on mount
+    useEffect(() => {
+        const checkLoginStatus = async () => {
+            try {
+                const response = await fetch('/api/auth/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    setIsLoggedIn(data.isLoggedIn); // Assume the API returns { isLoggedIn: true/false }
+                }
+            } catch (error) {
+                console.error('Error checking login status:', error);
+            }
+        };
+
+        checkLoginStatus();
+    }, []);
 
     // Fetch templates from API on mount
     useEffect(() => {
@@ -61,10 +80,18 @@ const TemplatesPage = () => {
     };
 
     const handleEditClick = (templateId: number, code: string) => {
-        // Navigate to the code editor page with the template code
-        router.push(`/codespace?templateId=${templateId}&code=${encodeURIComponent(code)}`);
+        if (!isLoggedIn) {
+            // Show popup for "forked version"
+            setShowPopup(true);
+            setTimeout(() => {
+                setShowPopup(false);
+                router.push(`/codespace?templateId=${templateId}&code=${encodeURIComponent(code)}`);
+            }, 1500); // Delay navigation by 1.5 seconds
+        } else {
+            // Navigate directly if logged in
+            router.push(`/codespace?templateId=${templateId}&code=${encodeURIComponent(code)}`);
+        }
     };
-
 
     return (
         <div className="container">
@@ -72,7 +99,6 @@ const TemplatesPage = () => {
 
             <input
                 type="text"
-                color={"black"}
                 placeholder="Search by title, explanation, or tags..."
                 value={searchQuery}
                 onChange={handleSearchChange}
@@ -99,6 +125,13 @@ const TemplatesPage = () => {
                 ))}
             </div>
 
+            {/* Popup */}
+            {showPopup && (
+                <div className="popup">
+                    <p>This is a forked version.</p>
+                </div>
+            )}
+
             <style jsx>{`
                 .container {
                     max-width: 800px;
@@ -112,7 +145,6 @@ const TemplatesPage = () => {
                     margin-bottom: 20px;
                     border: 1px solid #ccc;
                     border-radius: 5px;
-                    color: #0a0a0a;
                 }
 
                 .templates-list {
@@ -134,6 +166,7 @@ const TemplatesPage = () => {
 
                 .tag {
                     display: inline-block;
+                    color: #0a0a0a;
                     padding: 5px 10px;
                     margin-right: 8px;
                     background-color: #e0e0e0;
@@ -154,9 +187,25 @@ const TemplatesPage = () => {
                 .edit-button:hover {
                     background-color: #0056b3;
                 }
+
+                .popup {
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 5px;
+                    z-index: 1000;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                    text-align: center;
+                    font-size: 16px;
+                }
             `}</style>
         </div>
     );
 };
 
 export default TemplatesPage;
+
