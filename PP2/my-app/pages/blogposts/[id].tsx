@@ -15,6 +15,7 @@ interface BlogPost {
   downvotes: number;
   userVote: 'upvote' | 'downvote' | null;
   comments: Comment[];
+  hidden?: boolean; // Ensures hidden field is properly typed
 }
 
 interface Comment {
@@ -27,6 +28,7 @@ interface Comment {
 }
 
 interface DecodedToken {
+  userId: number;
   id: number;
   email: string;
 }
@@ -90,17 +92,24 @@ export default function BlogPostPage({
     templates: Array.isArray(post?.templates) ? post.templates.map((template) => template.id).join(', ') : '',
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isVoting, setIsVoting] = useState(false); 
+  const [isVoting, setIsVoting] = useState(false);
 
   const router = useRouter();
 
   let currentUserId: number | null = null;
 
   try {
+    console.log('Token received in BlogPostPage:', token);
     const decodedToken: DecodedToken = jwtDecode(token);
-    currentUserId = decodedToken.id;
+    currentUserId = decodedToken.userId;
+    console.log('Decoded token:', decodedToken);
+    console.log('current User Id:', currentUserId);
   } catch (error) {
     console.error('Failed to decode token:', error);
+  }
+
+  if (!currentUserId) {
+    console.warn('Current user ID could not be set. Token might be missing or invalid.');
   }
 
   useEffect(() => {
@@ -119,7 +128,7 @@ export default function BlogPostPage({
   }
 
   const handleVote = async (voteType: 'upvote' | 'downvote') => {
-    if (isVoting) return; 
+    if (isVoting) return;
     setIsVoting(true);
 
     try {
@@ -141,7 +150,7 @@ export default function BlogPostPage({
       }
 
       console.log(`${voteType} successful. Reloading page to reflect changes.`);
-      router.reload(); 
+      router.reload();
     } catch (error) {
       console.error(`Error during ${voteType}:`, error);
     } finally {
@@ -152,6 +161,11 @@ export default function BlogPostPage({
   const handleEdit = async () => {
     if (currentUserId !== post?.user?.id) {
       setErrorMessage('You are not authorized to edit this blog post.');
+      return;
+    }
+
+    if (post?.hidden) {
+      setErrorMessage('Editing is not allowed because this post is hidden.');
       return;
     }
 
@@ -207,7 +221,6 @@ export default function BlogPostPage({
     }
   };
 
-  // Functionality to handle reporting a post
   const handleReportPost = async (reason: string) => {
     try {
       const res = await fetch('/api/reports/create', {
@@ -230,7 +243,6 @@ export default function BlogPostPage({
     }
   };
 
-  // Functionality to handle reporting a comment
   const handleReportComment = async (commentId: number, reason: string) => {
     try {
       const res = await fetch('/api/reports/create', {
@@ -348,9 +360,11 @@ export default function BlogPostPage({
           <button
             onClick={() => setIsEditing(true)}
             className={`mt-2 px-4 py-2 ${
-              currentUserId === post?.user?.id ? 'bg-blue-600 text-white' : 'bg-gray-600 text-gray-300 cursor-not-allowed'
+              currentUserId === post?.user?.id && !post?.hidden
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-600 text-gray-300 cursor-not-allowed'
             } rounded`}
-            disabled={currentUserId !== post?.user?.id}
+            disabled={currentUserId !== post?.user?.id || post?.hidden}
           >
             Edit
           </button>
