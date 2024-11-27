@@ -71,17 +71,17 @@ export default function BlogPostsPage({ token, userId }: BlogPostsPageProps) {
         throw new Error(error.message || 'Failed to fetch blog posts');
       }
 
-      const data: BlogPost[] = await res.json();
-      console.log('Fetched blog posts data:', data);
+      // Updated to include totalCount from backend
+      const { blogPosts: posts, totalCount } = await res.json();
 
-      const visiblePosts = data.filter(
-        (post) => !post.hidden || (post.user.id === userId && post.hidden)
+      const visiblePosts = posts.filter(
+        (post: BlogPost) => !post.hidden || (post.user.id === userId && post.hidden)
       );
 
       console.log('Visible posts:', visiblePosts);
 
       setBlogPosts(visiblePosts);
-      setTotalPages(1);
+      setTotalPages(Math.ceil(totalCount / 10)); // Calculate total pages dynamically
     } catch (err: any) {
       console.error('Error fetching blog posts:', err.message);
       setError(err.message || 'An error occurred');
@@ -237,7 +237,11 @@ export default function BlogPostsPage({ token, userId }: BlogPostsPageProps) {
         <button
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
-          className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
+          className={`px-4 py-2 text-white rounded-lg ${
+            currentPage === 1
+              ? 'bg-blue-300 cursor-not-allowed'
+              : 'bg-blue-500 hover:bg-blue-600'
+          }`}
         >
           Previous
         </button>
@@ -247,7 +251,11 @@ export default function BlogPostsPage({ token, userId }: BlogPostsPageProps) {
         <button
           onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
           disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
+          className={`px-4 py-2 text-white rounded-lg ${
+            currentPage === totalPages
+              ? 'bg-blue-300 cursor-not-allowed'
+              : 'bg-blue-500 hover:bg-blue-600'
+          }`}
         >
           Next
         </button>
