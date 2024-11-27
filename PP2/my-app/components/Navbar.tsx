@@ -31,7 +31,7 @@ export default function Navbar() {
           Codespace
         </button>
         <button
-          onClick={() => router.push('/settings')}
+          onClick={() => router.push('/templates')}
           className="text-white hover:text-red-600"
         >
           Templates
