@@ -16,6 +16,7 @@ interface BlogPost {
   downvotes: number;
   userVote: 'upvote' | 'downvote' | null;
   comments: Comment[];
+  hidden?: boolean; // Ensures hidden field is properly typed
 }
 
 interface Comment {
@@ -28,12 +29,14 @@ interface Comment {
   userVote: 'upvote' | 'downvote' | null; // Add this field
 }
 
+
 interface BlogPostsPageProps {
   blogPost?: BlogPost;
   token: string | null;
   error?: string;
   userId: number;
 }
+
 
 // interface DecodedToken {
 //   id: number;
@@ -140,7 +143,7 @@ export default function BlogPostPage({
     templates: Array.isArray(post?.templates) ? post.templates.map((template) => template.id).join(', ') : '',
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isVoting, setIsVoting] = useState(false); 
+  const [isVoting, setIsVoting] = useState(false);
 
   const router = useRouter();
   useEffect(() => {
@@ -176,7 +179,7 @@ export default function BlogPostPage({
   }
 
   const handleVote = async (voteType: 'upvote' | 'downvote') => {
-    if (isVoting) return; 
+    if (isVoting) return;
     setIsVoting(true);
 
     try {
@@ -198,7 +201,7 @@ export default function BlogPostPage({
       }
 
       console.log(`${voteType} successful. Reloading page to reflect changes.`);
-      router.reload(); 
+      router.reload();
     } catch (error) {
       console.error(`Error during ${voteType}:`, error);
     } finally {
@@ -209,6 +212,11 @@ export default function BlogPostPage({
   const handleEdit = async () => {
     if (userId !== post?.user?.id) {
       setErrorMessage('You are not authorized to edit this blog post.');
+      return;
+    }
+
+    if (post?.hidden) {
+      setErrorMessage('Editing is not allowed because this post is hidden.');
       return;
     }
 
@@ -264,7 +272,6 @@ export default function BlogPostPage({
     }
   };
 
-  // Functionality to handle reporting a post
   const handleReportPost = async (reason: string) => {
     try {
       const res = await fetch('/api/reports/create', {
@@ -287,7 +294,6 @@ export default function BlogPostPage({
     }
   };
 
-  // Functionality to handle reporting a comment
   const handleReportComment = async (commentId: number, reason: string) => {
     try {
       const res = await fetch('/api/reports/create', {
