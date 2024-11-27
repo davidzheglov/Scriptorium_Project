@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GetServerSideProps } from 'next';
+import { useRouter } from 'next/router';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
     const { req } = context;
@@ -20,6 +21,9 @@ interface CodeEditorProps {
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
+    const router = useRouter();
+    const { code: queryCode } = router.query;
+
     const [code, setCode] = useState<string>('# Write your code here');
     const [output, setOutput] = useState<string>('');
     const [language, setLanguage] = useState<string>('python');
@@ -35,6 +39,13 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
         'python', 'javascript', 'java', 'c', 'cpp',
         'go', 'ruby', 'php', 'rust', 'kotlin', 'dart',
     ];
+
+    useEffect(() => {
+        // Decode and set code from query parameters
+        if (queryCode) {
+            setCode(decodeURIComponent(queryCode as string));
+        }
+    }, [queryCode]);
 
     const runCode = async () => {
         setIsLoading(true);
@@ -68,9 +79,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
     };
 
     const saveTemplate = async () => {
-        console.log('Token:', token); // Log the token
-
-        const tagsArray = templateTags.split(',').map(tag => tag.trim());
+        const tagsArray = templateTags.split(',').map((tag) => tag.trim());
         const templateData = {
             title: templateTitle,
             explanation: templateExplanation,
@@ -83,19 +92,16 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': token ? `Bearer ${token}` : '', // Ensure token is not undefined
+                    Authorization: token ? `Bearer ${token}` : '',
                 },
                 body: JSON.stringify(templateData),
             });
-
-            console.log('Response status:', response.status); // Log response status
 
             if (response.ok) {
                 alert('Template saved successfully!');
                 setShowSavePopup(false);
             } else {
-                const errorData = await response.text(); // Use text() instead of json() to see raw error
-                console.error('Error response:', errorData);
+                const errorData = await response.text();
                 alert(`Failed to save template: ${errorData || 'Unknown error'}`);
             }
         } catch (error) {
@@ -103,9 +109,8 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
         }
     };
 
-
     return (
-        <div className={`flex h-screen w-screen ${theme === 'light' ? 'bg-white text-black border border-gray-200' : 'bg-gray-900 text-white border border-gray-700'}`}>
+        <div className={`flex h-screen w-screen ${theme === 'light' ? 'bg-white text-black' : 'bg-gray-900 text-white'}`}>
             {/* Left Side: Code Editor */}
             <div className="w-2/3 h-full p-4 border-r">
                 <div className="flex justify-between items-center mb-4">
@@ -115,8 +120,10 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLanguage(e.target.value)}
                         className={`p-2 rounded ${theme === 'light' ? 'bg-gray-100 text-black' : 'bg-gray-800 text-white'}`}
                     >
-                        {languages.map(lang => (
-                            <option key={lang} value={lang}>{lang.toUpperCase()}</option>
+                        {languages.map((lang) => (
+                            <option key={lang} value={lang}>
+                                {lang.toUpperCase()}
+                            </option>
                         ))}
                     </select>
 
@@ -166,9 +173,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
             </div>
 
             {/* Right Side: Terminal/Output */}
-            <div className={`flex-none w-1/3 h-full p-4 ${theme === 'light'
-                ? 'bg-gray-100'
-                : 'bg-gray-800'}`}>
+            <div className={`flex-none w-1/3 h-full p-4 ${theme === 'light' ? 'bg-gray-100' : 'bg-gray-800'}`}>
                 <h3 className="font-bold">Output</h3>
                 <pre className={`w-full h-full overflow-auto p-2 rounded ${theme === 'light' ? 'bg-white text-black' : 'bg-gray-900 text-green-400'}`}>
                     {output || 'Output will be displayed here...'}
