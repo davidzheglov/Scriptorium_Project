@@ -79,7 +79,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
         };
 
         try {
-            const response = await fetch('/api/templates/index', {
+            const response = await fetch('/api/templates', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

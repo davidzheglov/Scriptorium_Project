@@ -47,6 +47,7 @@ export default async function handler(req, res) {
             return res.status(500).json({ message: 'Error retrieving templates', error });
         }
     } else {
+        console.log('IM HERE'); // Debugging unsupported method
         console.log('Unsupported Method:', req.method); // Debugging unsupported method
         res.setHeader('Allow', ['POST', 'GET']);
         return res.status(405).end(`Method ${req.method} Not Allowed`);
