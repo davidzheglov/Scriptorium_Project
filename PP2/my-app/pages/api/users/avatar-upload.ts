@@ -76,10 +76,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       select: { avatar: true },
     });
 
-    if (existingUser?.avatar) {
+    if (existingUser?.avatar && existingUser.avatar !== '/uploads/default.png') {
       const oldFilePath = path.join(process.cwd(), 'public', existingUser.avatar);
 
-      // Delete the old avatar file if it exists
+      // Delete the old avatar file if it exists and is not default.png
       try {
         await fs.unlink(oldFilePath);
         console.log(`Deleted old avatar: ${existingUser.avatar}`);
