@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router';
 import { GetServerSideProps } from 'next';
 import { useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode'; // Your existing import
+import { jwtDecode } from 'jwt-decode'; 
 import { format } from 'date-fns';
 
 interface BlogPost {
@@ -16,7 +16,7 @@ interface BlogPost {
   downvotes: number;
   userVote: 'upvote' | 'downvote' | null;
   comments: Comment[];
-  hidden?: boolean; // Ensures hidden field is properly typed
+  hidden?: boolean; 
 }
 
 interface Comment {
@@ -26,7 +26,7 @@ interface Comment {
   createdAt: string;
   upvotes: number;
   downvotes: number;
-  userVote: 'upvote' | 'downvote' | null; // Add this field
+  userVote: 'upvote' | 'downvote' | null; 
 }
 
 
@@ -601,7 +601,7 @@ export default function BlogPostPage({
         {/* Render Edit and Delete buttons for the comment owner */}
         {/* comment.user?.id === userId && */(
           <>
-          { comment.user.id === userId && (
+          { comment.user &&comment.user.id === userId && (
             <button
               onClick={() => handleEditComment(comment.id, comment.content)}
               className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
@@ -609,7 +609,7 @@ export default function BlogPostPage({
               ✏️
             </button> )}
                 {console.log('Comment User ID:', comment.user?.id)}
-                {comment.user.id === userId && (
+                { comment.user && comment.user.id === userId && (
                   <button
                     onClick={() => handleDeleteComment(comment.id)}
                     className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"

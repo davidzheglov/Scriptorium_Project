@@ -164,7 +164,6 @@ export default function SettingsPage({ token }: SettingsPageProps) {
       <div className="flex-grow space-y-6">
         <h1 className="text-2xl font-bold text-gray-700">Settings</h1>
         <div className="space-y-4">
-          {/* Editable Fields */}
           {['firstName', 'lastName', 'phoneNumber'].map((field) => (
             <div key={field} className="flex items-center space-x-4">
               <span className="font-medium text-gray-600 capitalize">
@@ -178,7 +177,7 @@ export default function SettingsPage({ token }: SettingsPageProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, [field]: e.target.value })
                     }
-                    className="flex-grow p-2 border rounded focus:ring focus:ring-blue-500"
+                    className="flex-grow p-2 border rounded focus:ring focus:ring-blue-500 text-gray-800"
                   />
                   <button
                     onClick={() => handleEditSubmit(field as keyof typeof formData)}
@@ -198,7 +197,7 @@ export default function SettingsPage({ token }: SettingsPageProps) {
               ) : (
                 <>
                   <span className="text-gray-800">
-                    {formData[field as keyof typeof formData] || 'N/A'}
+                    {String(formData[field as keyof typeof formData]) || 'N/A'}
                   </span>
                   <button
                     onClick={() =>
