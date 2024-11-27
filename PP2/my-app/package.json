@@ -12,6 +12,7 @@
   "dependencies": {
     "@prisma/client": "^5.21.1",
     "autoprefixer": "^10.4.20",
+    "axios": "^1.7.8",
     "bcrypt": "^5.1.1",
     "date-fns": "^4.1.0",
     "formidable": "^3.5.2",
@@ -19,10 +20,12 @@
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "next": "15.0.1",
+    "nookies": "^2.5.2",
     "react": "19.0.0-rc-69d4b800-20241021",
     "react-dom": "19.0.0-rc-69d4b800-20241021"
   },
   "devDependencies": {
+    "@types/formidable": "^3.4.5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
