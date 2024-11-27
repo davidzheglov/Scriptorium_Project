@@ -47,7 +47,6 @@ async function handleCreateBlogPost(req, res, user) {
   }
 }
 
-// Retrieve blog posts with optional search and pagination
 async function handleGetBlogPosts(req, res) {
   const { page = 1, limit = 10, search = '', sort = 'date' } = req.query;
   const skip = (page - 1) * limit;
@@ -62,14 +61,16 @@ async function handleGetBlogPosts(req, res) {
         ],
       },
       include: {
-        user: { select: { firstName: true, lastName: true, avatar: true } },
-        tags: true,
-        templates: true, 
+        user: { select: { id: true, firstName: true, lastName: true, avatar: true } }, // Include user details
+        tags: true, // Include tags
+        templates: true, // Include templates
+        reports: { select: { reason: true, createdAt: true } }, // Include reports
       },
       skip: parseInt(skip),
       take: parseInt(limit),
       orderBy: { createdAt: 'desc' },
     });
+
     if (sort === 'rating') {
       blogPosts.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
     }

@@ -29,18 +29,16 @@ async function handleGetBlogPostById(res, id) {
     const blogPost = await prisma.blogPost.findUnique({
       where: { id: parseInt(id) },
       include: {
-        user: { select: { firstName: true, lastName: true, avatar: true } },
+        user: { select: { id: true, firstName: true, lastName: true, avatar: true } },
         tags: true,
         templates: true,
         comments: {
           include: {
-            user: { select: { firstName: true, lastName: true, avatar: true } },
+            user: { select: { id: true, firstName: true, lastName: true, avatar: true } },
           },
         },
       },
     });
-
-    // console.log('Fetched blog post:', JSON.stringify(blogPost, null, 2)); 
 
     if (!blogPost) {
       return res.status(404).json({ message: 'Blog post not found' });

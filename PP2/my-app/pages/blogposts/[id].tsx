@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router';
 import { GetServerSideProps } from 'next';
 import { useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode'; // Your existing import
 
 interface BlogPost {
   id: number;
@@ -207,6 +207,52 @@ export default function BlogPostPage({
     }
   };
 
+  // Functionality to handle reporting a post
+  const handleReportPost = async (reason: string) => {
+    try {
+      const res = await fetch('/api/reports/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          reason,
+          blogPostId: post?.id,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to submit report');
+      console.log('Report submitted successfully');
+      alert('Report submitted successfully!');
+    } catch (error) {
+      console.error('Error reporting content:', error);
+    }
+  };
+
+  // Functionality to handle reporting a comment
+  const handleReportComment = async (commentId: number, reason: string) => {
+    try {
+      const res = await fetch('/api/reports/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          reason,
+          commentId,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to submit report');
+      console.log('Report submitted successfully');
+      alert('Comment report submitted successfully!');
+    } catch (error) {
+      console.error('Error reporting comment:', error);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 text-white">
       {errorMessage && (
@@ -308,6 +354,15 @@ export default function BlogPostPage({
           >
             Edit
           </button>
+          <button
+            onClick={() => {
+              const reason = prompt('Enter a reason for reporting this content:');
+              if (reason) handleReportPost(reason);
+            }}
+            className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
+          >
+            Report Post
+          </button>
         </>
       )}
 
@@ -331,6 +386,15 @@ export default function BlogPostPage({
               </div>
             </div>
             <p className="mt-2">{comment.content}</p>
+            <button
+              onClick={() => {
+                const reason = prompt('Enter a reason for reporting this comment:');
+                if (reason) handleReportComment(comment.id, reason);
+              }}
+              className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
+            >
+              Report Comment
+            </button>
           </div>
         ))}
       </section>

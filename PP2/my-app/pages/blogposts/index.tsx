@@ -7,33 +7,47 @@ interface BlogPost {
   title: string;
   description: string;
   tags: { name: string }[];
-  user?: { firstName: string; lastName: string; avatar: string };
+  user: { id: number; firstName: string; lastName: string; avatar: string };
   createdAt: string;
   upvotes: number;
   downvotes: number;
+  hidden: boolean;
+  reports: { reason: string; createdAt: string }[];
 }
 
 interface BlogPostsPageProps {
-  token: string | null; // Token passed from server-side
+  token: string | null;
+  userId: number;
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { req } = context;
   const cookies = req.cookies;
 
-  // Extract the JWT token from cookies
   const token = cookies.token || null;
+
+  const jwt = require('jsonwebtoken');
+  const SECRET_KEY = process.env.JWT_SECRET || 'default_secret_key';
+  let userId = null;
+
+  if (token) {
+    try {
+      const decodedToken = jwt.verify(token, SECRET_KEY) as { userId: number };
+      userId = decodedToken.userId;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+    }
+  }
 
   return {
     props: {
       token,
+      userId,
     },
   };
 };
 
-
-
-export default function BlogPostsPage({ token }: BlogPostsPageProps) {
+export default function BlogPostsPage({ token, userId }: BlogPostsPageProps) {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,15 +58,11 @@ export default function BlogPostsPage({ token }: BlogPostsPageProps) {
   const fetchBlogPosts = async (page: number) => {
     setLoading(true);
     try {
-      // if (!token) {
-      //   throw new Error('Authentication token is missing');
-      // }
-
-      console.log('Fetching blog posts with token:', token); // Debug statement
+      console.log('Fetching blog posts with token:', token);
 
       const res = await fetch(`/api/blogs?page=${page}&limit=10`, {
         headers: {
-          Authorization: `Bearer ${token}`, // Pass the token in the Authorization header
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -61,13 +71,19 @@ export default function BlogPostsPage({ token }: BlogPostsPageProps) {
         throw new Error(error.message || 'Failed to fetch blog posts');
       }
 
-      const data = await res.json();
-      console.log('Fetched blog posts data:', data); // Debugging fetched data
+      const data: BlogPost[] = await res.json();
+      console.log('Fetched blog posts data:', data);
 
-      setBlogPosts(data); // Set the fetched array directly
-      setTotalPages(1); // Update the totalPages if needed (default to 1 if not paginated)
+      const visiblePosts = data.filter(
+        (post) => !post.hidden || (post.user.id === userId && post.hidden)
+      );
+
+      console.log('Visible posts:', visiblePosts);
+
+      setBlogPosts(visiblePosts);
+      setTotalPages(1);
     } catch (err: any) {
-      console.error('Error fetching blog posts:', err.message); // Debugging errors
+      console.error('Error fetching blog posts:', err.message);
       setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);
@@ -75,55 +91,8 @@ export default function BlogPostsPage({ token }: BlogPostsPageProps) {
   };
 
   const handleCreatePost = () => {
-    router.push('createblogposts'); // Redirect to a create post page
+    router.push('createblogposts');
   };
-
-  useEffect(() => {
-    fetchBlogPosts(currentPage);
-  }, [currentPage]);
-
-  // Debugging state updates
-  useEffect(() => {
-    console.log('Updated blogPosts state:', blogPosts);
-  }, [blogPosts]);
-
-
-  const handleUpvote = async (postId: number) => {
-    try {
-      await fetch(`/api/votes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ id: postId, type: 'upvote', itemType: 'blogPost' }),
-      });
-      fetchBlogPosts(currentPage); // Refresh the posts after voting
-    } catch (error) {
-      console.error('Upvote failed:', error);
-    }
-  };
-  
-  const handleDownvote = async (postId: number) => {
-    try {
-      await fetch(`/api/votes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ id: postId, type: 'downvote', itemType: 'blogPost' }),
-      });
-      fetchBlogPosts(currentPage); // Refresh the posts after voting
-    } catch (error) {
-      console.error('Downvote failed:', error);
-    }
-  };
-
-
-  // const handleEdit = (postId: number) => {
-  //   router.push(`/blogposts/${postId}`);
-  // };
 
   const handleDelete = async (postId: number) => {
     try {
@@ -139,26 +108,68 @@ export default function BlogPostsPage({ token }: BlogPostsPageProps) {
     }
   };
 
+  const handleUpvote = async (postId: number) => {
+    try {
+      await fetch(`/api/votes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: postId, type: 'upvote', itemType: 'blogPost' }),
+      });
+      fetchBlogPosts(currentPage);
+    } catch (error) {
+      console.error('Upvote failed:', error);
+    }
+  };
+
+  const handleDownvote = async (postId: number) => {
+    try {
+      await fetch(`/api/votes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: postId, type: 'downvote', itemType: 'blogPost' }),
+      });
+      fetchBlogPosts(currentPage);
+    } catch (error) {
+      console.error('Downvote failed:', error);
+    }
+  };
+
+  useEffect(() => {
+    console.log('Current User ID:', userId);
+    fetchBlogPosts(currentPage);
+  }, [currentPage]);
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <header className="mb-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Blog Posts</h1>
+        <h1 className="text-3xl font-bold text-white">Blog Posts</h1>
         <button
           onClick={handleCreatePost}
-          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg"
+          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           Create New Post
         </button>
       </header>
 
       {loading ? (
-        <p>Loading...</p>
+        <p className="text-white">Loading...</p>
       ) : error ? (
         <p className="text-red-600">{error}</p>
       ) : blogPosts.length > 0 ? (
         <div className="space-y-4">
           {blogPosts.map((post) => (
-            <div key={post.id} className="p-4 border rounded-lg hover:shadow-md">
+            <div
+              key={post.id}
+              className={`p-4 border rounded-lg ${
+                post.hidden ? 'bg-gray-800' : 'bg-gray-900'
+              } hover:shadow-md`}
+            >
               <div className="flex items-center space-x-4">
                 <img
                   src={post.user?.avatar || '/default-avatar.png'}
@@ -167,25 +178,53 @@ export default function BlogPostsPage({ token }: BlogPostsPageProps) {
                 />
                 <div>
                   <h2
-                    className="text-xl font-semibold cursor-pointer"
+                    className="text-xl font-semibold cursor-pointer text-white"
                     onClick={() => router.push(`/blogposts/${post.id}`)}
                   >
                     {post.title}
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-400">
                     By {post.user?.firstName || 'Unknown'} {post.user?.lastName || ''} on{' '}
                     {new Date(post.createdAt).toLocaleDateString()}
                   </p>
-                </div>
-                <div className="flex space-x-2">
-                  
-                    <button onClick={() => handleDelete(post.id)}>🗑️</button>
+                  {post.hidden && post.user.id === userId && (
+                    <div className="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-500">
+                      <p className="text-red-600 font-semibold mb-2">
+                        This post is hidden. Reports:
+                      </p>
+                      <ul className="list-disc ml-4 text-gray-700">
+                        {post.reports.map((report, index) => (
+                          <li key={index}>{report.reason}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
-              <p className="mt-2">{post.description}</p>
+              <p className="mt-2 text-white">{post.description}</p>
               <div className="flex items-center space-x-4 mt-2">
-                <button onClick={() => handleUpvote(post.id)}>👍 {post.upvotes}</button>
-                <button onClick={() => handleDownvote(post.id)}>👎 {post.downvotes}</button>
+                <button
+                  onClick={() => handleUpvote(post.id)}
+                  disabled={post.hidden && post.user.id !== userId}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+                >
+                  👍 {post.upvotes}
+                </button>
+                <button
+                  onClick={() => handleDownvote(post.id)}
+                  disabled={post.hidden && post.user.id !== userId}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                >
+                  👎 {post.downvotes}
+                </button>
+                {post.user.id === userId && (
+                  <button
+                    onClick={() => handleDelete(post.id)}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                  >
+                    🗑️
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -202,7 +241,7 @@ export default function BlogPostsPage({ token }: BlogPostsPageProps) {
         >
           Previous
         </button>
-        <span>
+        <span className="text-white">
           Page {currentPage} of {totalPages}
         </span>
         <button

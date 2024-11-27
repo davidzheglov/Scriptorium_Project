@@ -1,40 +1,47 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { GetServerSideProps } from 'next';
+import { jwtDecode } from 'jwt-decode'; // Add this to decode JWT tokens
 
 interface LandingProps {
-    firstname: string;
-    lastname: string;
-    token: string | null;
-  }
-  
-  export const getServerSideProps: GetServerSideProps = async (context) => {
-    const { req } = context;
-    const cookies = req.cookies;
-  
-    // Extract data from cookies
-    const firstname = cookies.firstname || 'User';
-    const lastname = cookies.lastname || '';
-    const token = cookies.token || null;
-  
-    return {
-      props: {
-        firstname,
-        lastname,
-        token,
-      },
-    };
+  firstname: string;
+  lastname: string;
+  token: string | null;
+}
+
+interface DecodedToken {
+  role: string; // Assuming the role is included in the token payload
+}
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const { req } = context;
+  const cookies = req.cookies;
+
+  // Extract data from cookies
+  const firstname = cookies.firstname || 'User';
+  const lastname = cookies.lastname || '';
+  const token = cookies.token || null;
+
+  return {
+    props: {
+      firstname,
+      lastname,
+      token,
+    },
   };
-
-
+};
 
 export default function LandingPage({ firstname, lastname, token }: LandingProps) {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-  token ? setIsLoggedIn(true) : setIsLoggedIn(false);
-  }, []);
+    if (token) {
+      setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(false);
+    }
+  }, [token]);
 
   const handleLogout = async () => {
     try {
@@ -78,12 +85,21 @@ export default function LandingPage({ firstname, lastname, token }: LandingProps
       </section>
       <div>
         {isLoggedIn ? (
-          <button
-            onClick={handleLogout}
-            className="px-6 py-3 bg-red-700 hover:bg-red-600 rounded-lg font-medium text-white"
-          >
-            Logout
-          </button>
+          <div className="space-y-4">
+            <button
+              onClick={handleLogout}
+              className="px-6 py-3 bg-red-700 hover:bg-red-600 rounded-lg font-medium text-white"
+            >
+              Logout
+            </button>
+            {/* Reports Dashboard Button */}
+            <button
+              onClick={() => router.push('/admin/reports')}
+              className="px-6 py-3 bg-yellow-600 hover:bg-yellow-500 rounded-lg font-medium text-white"
+            >
+              Reports Dashboard
+            </button>
+          </div>
         ) : (
           <>
             <button
