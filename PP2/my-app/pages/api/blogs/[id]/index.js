@@ -40,6 +40,8 @@ async function handleGetBlogPostById(res, id) {
       },
     });
 
+    // console.log('Fetched blog post:', JSON.stringify(blogPost, null, 2)); 
+
     if (!blogPost) {
       return res.status(404).json({ message: 'Blog post not found' });
     }
