@@ -23,27 +23,22 @@ export default async function handler(req, res) {
       },
     });
 
-    let voteChange = 0;
-
     if (existingVote) {
-      // If the existing vote type is the same, remove it to "toggle off" the vote
+      // Prevent simultaneous upvote and downvote
       if (existingVote.type === type) {
+        // Remove vote (toggle off)
         await prisma.vote.delete({ where: { id: existingVote.id } });
-
-        voteChange = type === 'upvote' ? -1 : 1; // Decrement counter for the removed vote
-        await updateCounters(id, itemType, voteChange, type);
+        await updateCounters(id, itemType, type, 'remove');
         return res.status(200).json({ message: `${type} removed` });
+      } else {
+        // Switch vote type
+        await prisma.vote.update({
+          where: { id: existingVote.id },
+          data: { type },
+        });
+        await updateCounters(id, itemType, type, 'switch', existingVote.type);
+        return res.status(200).json({ message: `Vote switched to ${type}` });
       }
-
-      // Otherwise, update the vote type to the new type
-      await prisma.vote.update({
-        where: { id: existingVote.id },
-        data: { type },
-      });
-
-      voteChange = type === 'upvote' ? 1 : -1; // Increase new vote, decrease previous vote
-      await updateCounters(id, itemType, voteChange, type);
-      return res.status(200).json({ message: `Vote changed to ${type}` });
     }
 
     // Create a new vote
@@ -56,31 +51,34 @@ export default async function handler(req, res) {
       },
     });
 
-    voteChange = type === 'upvote' ? 1 : -1;
-    await updateCounters(id, itemType, voteChange, type);
-
+    await updateCounters(id, itemType, type, 'add');
     return res.status(201).json({ message: `Voted ${type}` });
   } catch (error) {
-    console.error("Error processing vote:", error);
+    console.error('Error processing vote:', error);
     res.status(500).json({ message: 'Failed to process vote' });
   }
 }
 
 // Helper function to update vote counters
-async function updateCounters(id, itemType, voteChange, type) {
-  const updateData = type === 'upvote' 
-    ? { upvotes: { increment: voteChange } }
-    : { downvotes: { increment: voteChange } };
+async function updateCounters(id, itemType, type, action, prevType = null) {
+  const incrementField = type === 'upvote' ? 'upvotes' : 'downvotes';
+  const decrementField = prevType === 'upvote' ? 'upvotes' : 'downvotes';
 
-  if (itemType === 'blogPost') {
-    await prisma.blogPost.update({
-      where: { id },
-      data: updateData,
-    });
-  } else if (itemType === 'comment') {
-    await prisma.comment.update({
-      where: { id },
-      data: updateData,
-    });
+  const data = {};
+
+  if (action === 'add') {
+    data[incrementField] = { increment: 1 };
+  } else if (action === 'remove') {
+    data[incrementField] = { decrement: 1 };
+  } else if (action === 'switch') {
+    data[incrementField] = { increment: 1 };
+    data[decrementField] = { decrement: 1 };
   }
+
+  const model = itemType === 'blogPost' ? prisma.blogPost : prisma.comment;
+
+  await model.update({
+    where: { id },
+    data,
+  });
 }

@@ -53,6 +53,8 @@ export default function BlogPostsPage({ token, userId }: BlogPostsPageProps) {
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState(''); // State for search input
+  const [sortOrder, setSortOrder] = useState<'date' | 'rating'>('date'); // State for sort order
   const router = useRouter();
 
   const fetchBlogPosts = async (page: number) => {
@@ -60,11 +62,14 @@ export default function BlogPostsPage({ token, userId }: BlogPostsPageProps) {
     try {
       console.log('Fetching blog posts with token:', token);
 
-      const res = await fetch(`/api/blogs?page=${page}&limit=10`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `/api/blogs?page=${page}&limit=10&search=${encodeURIComponent(searchQuery)}&sort=${sortOrder}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) {
         const error = await res.json();
@@ -89,6 +94,21 @@ export default function BlogPostsPage({ token, userId }: BlogPostsPageProps) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchBlogPosts(currentPage);
+  }, [currentPage, searchQuery, sortOrder]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Reset to the first page when a new search is initiated
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortOrder(e.target.value as 'date' | 'rating');
+    setCurrentPage(1); // Reset to the first page when the sort order changes
+  };
+
 
   const handleCreatePost = () => {
     router.push('createblogposts');
@@ -146,7 +166,27 @@ export default function BlogPostsPage({ token, userId }: BlogPostsPageProps) {
   }, [currentPage]);
 
   return (
+    
     <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-6">
+      {/* Search and Sort Bar */}
+        <input
+          type="text"
+          placeholder="Search blog posts..."
+          value={searchQuery}
+          onChange={handleSearch}
+          className="w-full max-w-md p-2 border rounded bg-gray-100 text-black"
+        />
+        <select
+          value={sortOrder}
+          onChange={handleSortChange}
+          className="ml-4 p-2 border rounded bg-white text-black"
+        >
+          <option value="date">Sort by Date</option>
+          <option value="rating">Sort by Rating</option>
+        </select>
+      </div>
+
       <header className="mb-6 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-white">Blog Posts</h1>
         <button

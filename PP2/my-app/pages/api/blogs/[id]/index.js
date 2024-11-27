@@ -4,9 +4,9 @@ import { authenticateUser } from '@/middleware/auth';
 export default async function handler(req, res) {
   const user = await authenticateUser(req);
 
-  if (!user) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
+  // if (!user) {
+  //  return res.status(401).json({ message: 'Unauthorized' });
+  //}
 
   const { id } = req.query;
 
@@ -54,6 +54,9 @@ async function handleGetBlogPostById(res, id) {
 // Update a blog post by ID
 async function handleUpdateBlogPost(req, res, id, user) {
   const { title, description, tags, templateIds } = req.body;
+  if (!user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
 
   try {
     // Verify ownership
@@ -91,6 +94,9 @@ async function handleUpdateBlogPost(req, res, id, user) {
 async function handleDeleteBlogPost(res, id, user) {
   try {
     const blogPost = await prisma.blogPost.findUnique({ where: { id: parseInt(id) } });
+    if (!user) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
 
     // Check if user is the owner
     if (!blogPost || blogPost.userId !== user.id) {
