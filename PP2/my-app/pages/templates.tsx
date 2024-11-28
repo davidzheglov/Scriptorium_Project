@@ -143,6 +143,8 @@ const TemplatesPage = () => {
                     margin-bottom: 20px;
                     border: 1px solid #ccc;
                     border-radius: 5px;
+                    color: black;
+                    background-color: white;
                 }
 
                 .templates-list {
