@@ -1,7 +1,8 @@
+import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/utils/db';
 import { authenticateUser } from '@/middleware/auth';
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   const user = await authenticateUser(req);
 
   switch (req.method) {
@@ -16,11 +17,16 @@ export default async function handler(req, res) {
 }
 
 // Create a new blog post
-async function handleCreateBlogPost(req, res, user) {
+async function handleCreateBlogPost(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  user: { id: number } | null
+): Promise<void> {
   if (!user) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
-  const { title, description, tags, templateIds } = req.body;
+
+  const { title, description, tags, templateIds }: { title: string; description: string; tags: string[]; templateIds: number[] } = req.body;
 
   try {
     const blogPost = await prisma.blogPost.create({
@@ -48,9 +54,9 @@ async function handleCreateBlogPost(req, res, user) {
 }
 
 // Retrieve blog posts with pagination, search, and sort
-async function handleGetBlogPosts(req, res) {
-  const { page = 1, limit = 10, search = '', sort = 'date' } = req.query;
-  const skip = (page - 1) * limit;
+async function handleGetBlogPosts(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+  const { page = 1, limit = 10, search = '', sort = 'date' }: { page?: number; limit?: number; search?: string; sort?: string } = req.query as any;
+  const skip = (parseInt(page as unknown as string) - 1) * parseInt(limit as unknown as string);
 
   try {
     // Get the total count of blog posts matching the search criteria
@@ -79,8 +85,8 @@ async function handleGetBlogPosts(req, res) {
         templates: true,
         reports: { select: { reason: true, createdAt: true } },
       },
-      skip: parseInt(skip),
-      take: parseInt(limit),
+      skip,
+      take: parseInt(limit as unknown as string),
       orderBy: { createdAt: 'desc' },
     });
 

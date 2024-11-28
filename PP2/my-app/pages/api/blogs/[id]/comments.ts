@@ -1,7 +1,7 @@
 import prisma from '@/utils/db';
 import { authenticateUser } from '@/middleware/auth';
 
-export default async function handler(req, res) {
+export default async function handler(req : any, res : any) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }

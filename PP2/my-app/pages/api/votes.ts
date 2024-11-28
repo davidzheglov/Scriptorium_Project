@@ -1,13 +1,20 @@
+import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/utils/db';
 import { authenticateUser } from '@/middleware/auth';
 
-export default async function handler(req, res) {
+interface UpdateCountersAction {
+  action: 'add' | 'remove' | 'switch';
+  type: 'upvote' | 'downvote';
+  prevType?: 'upvote' | 'downvote' | null;
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   const user = await authenticateUser(req);
   if (!user) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  const { id, type, itemType } = req.body; // id: item ID, type: 'upvote' or 'downvote', itemType: 'blogPost' or 'comment'
+  const { id, type, itemType } = req.body as { id: number; type: 'upvote' | 'downvote'; itemType: 'blogPost' | 'comment' };
 
   if (!['upvote', 'downvote'].includes(type) || !['blogPost', 'comment'].includes(itemType)) {
     return res.status(400).json({ message: 'Invalid type or itemType' });
@@ -28,7 +35,7 @@ export default async function handler(req, res) {
       if (existingVote.type === type) {
         // Remove vote (toggle off)
         await prisma.vote.delete({ where: { id: existingVote.id } });
-        await updateCounters(id, itemType, type, 'remove');
+        await updateCounters(id, itemType, { type, action: 'remove' });
         return res.status(200).json({ message: `${type} removed` });
       } else {
         // Switch vote type
@@ -36,7 +43,7 @@ export default async function handler(req, res) {
           where: { id: existingVote.id },
           data: { type },
         });
-        await updateCounters(id, itemType, type, 'switch', existingVote.type);
+        await updateCounters(id, itemType, { type, action: 'switch', prevType: existingVote.type });
         return res.status(200).json({ message: `Vote switched to ${type}` });
       }
     }
@@ -51,7 +58,7 @@ export default async function handler(req, res) {
       },
     });
 
-    await updateCounters(id, itemType, type, 'add');
+    await updateCounters(id, itemType, { type, action: 'add' });
     return res.status(201).json({ message: `Voted ${type}` });
   } catch (error) {
     console.error('Error processing vote:', error);
@@ -60,11 +67,15 @@ export default async function handler(req, res) {
 }
 
 // Helper function to update vote counters
-async function updateCounters(id, itemType, type, action, prevType = null) {
+async function updateCounters(
+  id: number,
+  itemType: 'blogPost' | 'comment',
+  { type, action, prevType }: UpdateCountersAction
+): Promise<void> {
   const incrementField = type === 'upvote' ? 'upvotes' : 'downvotes';
   const decrementField = prevType === 'upvote' ? 'upvotes' : 'downvotes';
 
-  const data = {};
+  const data: Record<string, any> = {};
 
   if (action === 'add') {
     data[incrementField] = { increment: 1 };
@@ -72,7 +83,9 @@ async function updateCounters(id, itemType, type, action, prevType = null) {
     data[incrementField] = { decrement: 1 };
   } else if (action === 'switch') {
     data[incrementField] = { increment: 1 };
-    data[decrementField] = { decrement: 1 };
+    if (decrementField) {
+      data[decrementField] = { decrement: 1 };
+    }
   }
 
   const model = itemType === 'blogPost' ? prisma.blogPost : prisma.comment;
@@ -82,3 +95,4 @@ async function updateCounters(id, itemType, type, action, prevType = null) {
     data,
   });
 }
+

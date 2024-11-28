@@ -1,7 +1,7 @@
 import prisma from '@/utils/db';
 import { authenticateUser } from '@/middleware/auth';
 
-export default async function handler(req, res) {
+export default async function handler(req : any, res : any) {
   const user = await authenticateUser(req);
 
   // if (!user) {
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 }
 
 // Fetch a single blog post by ID
-async function handleGetBlogPostById(res, id) {
+async function handleGetBlogPostById(res : any, id: any) {
   try {
     const blogPost = await prisma.blogPost.findUnique({
       where: { id: parseInt(id) },
@@ -52,7 +52,7 @@ async function handleGetBlogPostById(res, id) {
 }
 
 // Update a blog post by ID
-async function handleUpdateBlogPost(req, res, id, user) {
+async function handleUpdateBlogPost(req : any, res : any, id : any, user : any) {
   const { title, description, tags, templateIds } = req.body;
   if (!user) {
     return res.status(401).json({ message: 'Unauthorized' });
@@ -72,13 +72,13 @@ async function handleUpdateBlogPost(req, res, id, user) {
         description,
         tags: {
           set: [], // Clear existing tags
-          connectOrCreate: tags.map((tag) => ({
+          connectOrCreate: tags.map((tag : any) => ({
             where: { name: tag },
             create: { name: tag },
           })),
         },
         templates: {
-          set: templateIds.map((id) => ({ id })), // Update associated templates
+          set: templateIds.map((id : any) => ({ id })), // Update associated templates
         },
       },
     });
@@ -91,7 +91,7 @@ async function handleUpdateBlogPost(req, res, id, user) {
 }
 
 // Delete a blog post by ID
-async function handleDeleteBlogPost(res, id, user) {
+async function handleDeleteBlogPost(res : any, id : any, user : any) {
   try {
     const blogPost = await prisma.blogPost.findUnique({ where: { id: parseInt(id) } });
     if (!user) {
