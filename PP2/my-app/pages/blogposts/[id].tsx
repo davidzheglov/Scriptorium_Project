@@ -495,6 +495,23 @@ export default function BlogPostPage({
               ))}
             </div>
           </div>
+          
+          {/* Templates Section */}
+          <div className="mt-4">
+            <h3 className="text-lg font-bold">Templates:</h3>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {post?.templates.map((template, index) => (
+                <a
+                  key={index}
+                  href={`/codespace?templateId=${template.id}`} // Link to the codespace
+                  className="px-2 py-1 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700"
+                >
+                  Template #{template.id}
+                </a>
+              ))}
+            </div>
+          </div>
+
           <div className="flex items-center gap-4 mt-4">
             <button
               onClick={() => handleVote('upvote')}
