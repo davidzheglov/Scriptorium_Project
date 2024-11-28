@@ -7,7 +7,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const { req } = context;
     const cookies = req.cookies;
 
-    // Extract the JWT token from cookies
     const token = cookies.token || null;
 
     return {
@@ -18,7 +17,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 };
 
 interface CodeEditorProps {
-    token: string | null; // Add the token as a prop
+    token: string | null;
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
@@ -42,7 +41,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
     ];
 
     useEffect(() => {
-        // Decode and set code from query parameters
         if (queryCode) {
             setCode(decodeURIComponent(queryCode as string));
         }
@@ -113,10 +111,8 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
     return (
         <div
             className={`flex h-screen w-screen ${theme === 'light' ? 'bg-white text-black' : 'bg-gray-900 text-white'}`}>
-            {/* Left Side: Code Editor */}
             <div className="w-2/3 h-full p-4 border-r">
                 <div className="flex justify-between items-center mb-4 space-x-4">
-                    {/* Language Selector */}
                     <select
                         value={language}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLanguage(e.target.value)}
@@ -129,9 +125,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
                         ))}
                     </select>
 
-                    {/* Buttons Container */}
                     <div className="flex space-x-2">
-                        {/* Theme Toggle */}
                         <button
                             onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
                             className={`p-2 rounded ${theme === 'light' ? 'bg-gray-200 text-black' : 'bg-gray-700 text-white'}`}
@@ -139,7 +133,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
                             {theme === 'light' ? '🌙' : '☀️'}
                         </button>
 
-                        {/* Save Code as Template Button */}
                         <button
                             onClick={() => setShowSavePopup(true)}
                             className={`p-2 rounded ${theme === 'light' ? 'bg-gray-200 text-black' : 'bg-gray-700 text-white'}`}
@@ -149,7 +142,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
                     </div>
                 </div>
 
-                {/* Code Input */}
                 <textarea
                     value={code}
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCode(e.target.value)}
@@ -157,7 +149,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
                     placeholder="Write your code here..."
                 />
 
-                {/* Stdin Input */}
                 <input
                     type="text"
                     value={stdin}
@@ -166,7 +157,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
                     className={`w-full p-2 mt-2 rounded ${theme === 'light' ? 'bg-gray-100 text-black' : 'bg-gray-800 text-white'}`}
                 />
 
-                {/* Run Button */}
                 <button
                     onClick={runCode}
                     disabled={isLoading}
@@ -177,7 +167,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
                 </button>
             </div>
 
-            {/* Right Side: Terminal/Output */}
             <div className={`flex-none w-1/3 h-full p-4 ${theme === 'light' ? 'bg-gray-100' : 'bg-gray-800'}`}>
                 <h3 className="font-bold">Output</h3>
                 <pre
@@ -186,7 +175,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ token }) => {
         </pre>
             </div>
 
-            {/* Save Template Pop-up */}
             {showSavePopup && (
                 <div
                     className={`absolute top-0 left-0 w-full h-full flex items-center justify-center ${theme === 'light' ? 'bg-gray-800 bg-opacity-50' : 'bg-opacity-75'}`}>

@@ -18,18 +18,17 @@ const TemplatesPage = () => {
     const [templates, setTemplates] = useState<Template[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [filteredTemplates, setFilteredTemplates] = useState<Template[]>([]);
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Track login status
-    const [showPopup, setShowPopup] = useState<boolean>(false); // For showing the popup
-    const router = useRouter(); // For navigation
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+    const [showPopup, setShowPopup] = useState<boolean>(false);
+    const router = useRouter();
 
-    // Fetch login status on mount
     useEffect(() => {
         const checkLoginStatus = async () => {
             try {
                 const response = await fetch('/api/auth/status');
                 if (response.ok) {
                     const data = await response.json();
-                    setIsLoggedIn(data.isLoggedIn); // Assume the API returns { isLoggedIn: true/false }
+                    setIsLoggedIn(data.isLoggedIn);
                 }
             } catch (error) {
                 console.error('Error checking login status:', error);
@@ -39,14 +38,13 @@ const TemplatesPage = () => {
         checkLoginStatus();
     }, []);
 
-    // Fetch templates from API on mount
     useEffect(() => {
         const fetchTemplates = async () => {
             try {
                 const response = await fetch('/api/templates/visitor_get');
                 if (response.ok) {
                     const data = await response.json();
-                    setTemplates(data); // Set the templates from the API response
+                    setTemplates(data);
                 } else {
                     console.error('Failed to fetch templates');
                 }
@@ -58,7 +56,6 @@ const TemplatesPage = () => {
         fetchTemplates();
     }, []);
 
-    // Filter templates based on search query
     useEffect(() => {
         if (searchQuery) {
             setFilteredTemplates(
@@ -81,14 +78,12 @@ const TemplatesPage = () => {
 
     const handleEditClick = (templateId: number, code: string) => {
         if (!isLoggedIn) {
-            // Show popup for "forked version"
             setShowPopup(true);
             setTimeout(() => {
                 setShowPopup(false);
                 router.push(`/codespace?templateId=${templateId}&code=${encodeURIComponent(code)}`);
-            }, 1500); // Delay navigation by 1.5 seconds
+            }, 1500);
         } else {
-            // Navigate directly if logged in
             router.push(`/codespace?templateId=${templateId}&code=${encodeURIComponent(code)}`);
         }
     };
@@ -108,15 +103,19 @@ const TemplatesPage = () => {
             <div className="templates-list">
                 {filteredTemplates.map((template) => (
                     <div key={template.id} className="template-card">
-                        <h2 style={{ color: 'black' }}>{template.title}</h2>
+                        <h2 style={{ color: 'black' }}>
+                            {template.title} (ID: {template.id})
+                        </h2>
                         <p style={{ color: 'black' }}>{template.explanation}</p>
                         <div className="tags">
                             {template.tags.map((tag) => (
-                                <span key={tag.id} className="tag">{tag.name}</span>
+                                <span key={tag.id} className="tag">
+                                    {tag.name}
+                                </span>
                             ))}
                         </div>
                         <button
-                            onClick={() => handleEditClick(template.id, template.code)} // Trigger edit action
+                            onClick={() => handleEditClick(template.id, template.code)}
                             className="edit-button"
                         >
                             Edit
@@ -125,7 +124,6 @@ const TemplatesPage = () => {
                 ))}
             </div>
 
-            {/* Popup */}
             {showPopup && (
                 <div className="popup">
                     <p>This is a forked version.</p>
@@ -208,4 +206,3 @@ const TemplatesPage = () => {
 };
 
 export default TemplatesPage;
-
