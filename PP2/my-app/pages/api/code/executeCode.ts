@@ -2,37 +2,58 @@ import { exec } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 
-export default async function handler(req, res) {
-    const { code, language, input } = req.body;
+interface RequestBody {
+    code: string;
+    language: string;
+    input: string;
+}
+
+interface ErrorDetails {
+    message: string;
+    details: string;
+    language?: string;
+    input?: string;
+}
+
+export default async function handler(req: any, res: any): Promise<void> {
+    const { code, language, input }: RequestBody = req.body;
 
     console.log("Request received:", { code, language, input });
 
     try {
         const result = await executeCode(code, language, input);
         res.status(200).json({ output: result });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Execution error:", error);
         res.status(500).json({
             error: {
                 message: error.message,
                 details: error.details,
                 language,
-                input
-            }
+                input,
+            },
         });
     }
 }
 
-function executeCode(code, language, input) {
+function executeCode(code: string, language: string, input: string): Promise<string> {
     return new Promise((resolve, reject) => {
         const fileName = language === 'java'
             ? '/tmp/HelloWorld'
             : path.join('/tmp', `code-${Date.now()}`);
 
         const fileExtension = getFileExtension(language);
+        if (!fileExtension) {
+            reject({
+                message: 'Unsupported language',
+                details: 'The provided language is not supported.',
+            });
+            return;
+        }
+
         fs.writeFileSync(`${fileName}.${fileExtension}`, code);
 
-        let command;
+        let command: string;
         switch (language) {
             case 'c':
                 command = `gcc ${fileName}.c -o ${fileName} && echo "${input}" | ${fileName}`;
@@ -50,7 +71,10 @@ function executeCode(code, language, input) {
                 command = `echo "${input}" | node ${fileName}.js`;
                 break;
             default:
-                reject({ message: 'Unsupported language', details: 'The provided language is not supported.' });
+                reject({
+                    message: 'Unsupported language',
+                    details: 'The provided language is not supported.',
+                });
                 return;
         }
 
@@ -74,21 +98,29 @@ function executeCode(code, language, input) {
     });
 }
 
-function getFileExtension(language) {
+function getFileExtension(language: string): string {
     switch (language) {
-        case 'c': return 'c';
-        case 'cpp': return 'cpp';
-        case 'java': return 'java';
-        case 'python': return 'py';
-        case 'javascript': return 'js';
-        default: return '';
+        case 'c':
+            return 'c';
+        case 'cpp':
+            return 'cpp';
+        case 'java':
+            return 'java';
+        case 'python':
+            return 'py';
+        case 'javascript':
+            return 'js';
+        default:
+            return '';
     }
 }
 
-function cleanUpTempFiles(fileName, language) {
+function cleanUpTempFiles(fileName: string, language: string): void {
     const extension = getFileExtension(language);
     try {
-        fs.unlinkSync(`${fileName}.${extension}`);
+        if (extension) {
+            fs.unlinkSync(`${fileName}.${extension}`);
+        }
         if (language === 'c' || language === 'cpp') {
             fs.unlinkSync(fileName);
         } else if (language === 'java') {
@@ -98,6 +130,7 @@ function cleanUpTempFiles(fileName, language) {
         console.error("Error cleaning up temp files:", err);
     }
 }
+
 
 
 

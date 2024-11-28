@@ -1,7 +1,8 @@
 import { exec } from 'child_process';
 import fs from 'fs/promises';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-const dockerImages = {
+const dockerImages: Record<string, string> = {
     python: 'sandbox-python:3.10',
     java: 'sandbox-java:17',
     javascript: 'sandbox-node:18',
@@ -15,12 +16,12 @@ const dockerImages = {
     dart: 'sandbox-dart:stable',
 };
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { language, code, stdin } = req.body;
+    const { language, code, stdin }: { language?: string; code?: string; stdin?: string } = req.body;
 
     if (!language || !code) {
         return res.status(400).json({ error: 'Language and code are required.' });
@@ -33,7 +34,7 @@ export default async function handler(req, res) {
 
     try {
         // Save the code to a temporary file
-        const fileExtension = {
+        const fileExtension: Record<string, string> = {
             python: '.py',
             java: '.java',
             javascript: '.js',
@@ -56,9 +57,9 @@ export default async function handler(req, res) {
         // Run the Docker container and pipe stdin
         const command = `echo "${stdin || ''}" | docker run --rm -i -v ${filePath}:/usr/src/app/sandbox${fileExtension[language]} ${image}`;
 
-        const output = await new Promise((resolve, reject) => {
+        const output = await new Promise<string>((resolve, reject) => {
             exec(command, (error, stdout, stderr) => {
-                fs.unlink(filePath); // Clean up the temp file
+                fs.unlink(filePath).catch((err) => console.error("Failed to delete temp file:", err)); // Clean up the temp file
                 if (error) {
                     // Log the error details
                     console.error("Execution Error:", stderr || error.message);
@@ -69,12 +70,13 @@ export default async function handler(req, res) {
         });
 
         res.status(200).json({ output });
-    } catch (error) {
+    } catch (error: unknown) {
         // Log detailed error
         console.error("Execution failed:", error);
-        res.status(500).json({ error: `Execution failed: ${error.message}` });
+        res.status(500).json({ error: `Execution failed: ${(error as Error).message}` });
     }
 }
+
 
 
 
