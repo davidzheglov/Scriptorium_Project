@@ -1,7 +1,8 @@
 import prisma from '@/utils/db';
 import { authenticateAdmin } from '@/middleware/auth';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const admin = await authenticateAdmin(req);
   if (!admin) {
     return res.status(403).json({ message: 'Forbidden: Admin access only' });
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { blogPostId, commentId } = req.body;
+  const { blogPostId, commentId }: { blogPostId?: number; commentId?: number } = req.body;
 
   try {
     if (blogPostId) {

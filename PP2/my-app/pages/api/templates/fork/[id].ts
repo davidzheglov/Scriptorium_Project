@@ -1,11 +1,13 @@
 import prisma from '@/utils/db';
 import { authenticateUser } from '@/middleware/auth';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const user = await authenticateUser(req);
     if (!user) return res.status(401).json({ message: 'Unauthorized' });
 
     const { id } = req.query;
+
     if (req.method === 'POST') {
         try {
             const templateToFork = await prisma.template.findUnique({
@@ -26,12 +28,13 @@ export default async function handler(req, res) {
                     },
                 },
             });
+
             res.status(201).json(forkedTemplate);
         } catch (error) {
             res.status(500).json({ message: 'Error forking template', error });
         }
     } else {
         res.setHeader("Allow", ["POST"]);
-        res.status(405).end('Method ${req.method} not allowed');
+        res.status(405).end(`Method ${req.method} not allowed`);
     }
 }

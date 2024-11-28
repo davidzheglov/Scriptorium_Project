@@ -1,8 +1,15 @@
 import prisma from '@/utils/db';
 import { authenticateUser } from '@/middleware/auth';
+import { NextApiRequest, NextApiResponse } from 'next';
 
+interface UpdateTemplateRequestBody {
+  title: string;
+  code: string;
+  explanation: string;
+  tags: string[];
+}
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const user = await authenticateUser(req);
     if (!user) return res.status(401).json({ message: 'Unauthorized' });
 
@@ -32,10 +39,11 @@ export default async function handler(req, res) {
         }
     }
     else if (req.method === 'PUT') {
-        const { title, code, explanation, tags } = req.body;
+        const { title, code, explanation, tags } = req.body as UpdateTemplateRequestBody;
 
         try {
             const template = await prisma.template.findUnique({ where: { id: Number(id) } });
+            if (!template) return res.status(404).json({ message: 'Template not found' });
             if (template.userId !== user.id) return res.status(403).json({ message: 'Forbidden' });
 
             const updatedTemplate = await prisma.template.update({
@@ -73,7 +81,7 @@ export default async function handler(req, res) {
             res.status(500).json({ message: 'Error deleting template', error});
         }
     } else {
-        res.setHeader('Allow', ['PUT', 'DELETE']);
-        res.status(405).end('Method ${req.method} Not allowed');
+        res.setHeader('Allow', ['PUT', 'DELETE', 'GET']);
+        res.status(405).end(`Method ${req.method} Not allowed`);
     }
 }

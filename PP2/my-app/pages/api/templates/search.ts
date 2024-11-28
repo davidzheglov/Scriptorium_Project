@@ -1,8 +1,12 @@
 import prisma from '@/utils/db';
-import { authenticateUser } from '@/middleware/auth';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { query } = req.query;
+
+    if (typeof query !== 'string') {
+        return res.status(400).json({ message: 'Invalid query parameter' });
+    }
 
     try {
         const templates = await prisma.template.findMany({

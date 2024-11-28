@@ -1,7 +1,15 @@
 import prisma from '@/utils/db';
 import { authenticateUser } from '@/middleware/auth';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req, res) {
+interface CreateTemplateRequestBody {
+  title: string;
+  code: string;
+  explanation: string;
+  tags: string[];
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     console.log('Request Method:', req.method); // Log the method
     console.log('Request Path:', req.url);     // Log the request path
     console.log('Headers:', req.headers);     // Log headers for debugging
@@ -10,7 +18,7 @@ export default async function handler(req, res) {
         const user = await authenticateUser(req);
         if (!user) return res.status(401).json({ message: 'Unauthorized' });
 
-        const { title, code, explanation, tags } = req.body;
+        const { title, code, explanation, tags } = req.body as CreateTemplateRequestBody;
 
         try {
             const newTemplate = await prisma.template.create({
@@ -53,6 +61,3 @@ export default async function handler(req, res) {
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
-
-
-

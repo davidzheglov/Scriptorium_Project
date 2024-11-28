@@ -1,7 +1,8 @@
 import prisma from '@/utils/db';
 import { authenticateUser } from '@/middleware/auth';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const user = await authenticateUser(req);
   if (!user) {
     return res.status(401).json({ message: 'Unauthorized' });
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { reason, blogPostId, commentId } = req.body;
+  const { reason, blogPostId, commentId }: { reason: string; blogPostId?: number; commentId?: number } = req.body;
 
   if (!reason || (!blogPostId && !commentId)) {
     return res.status(400).json({ message: 'Reason and target (blog post or comment) are required' });
