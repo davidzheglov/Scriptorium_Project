@@ -477,6 +477,11 @@ export default function BlogPostPage({
           <h1 className="text-3xl font-bold">{post?.title || 'Untitled'}</h1>
           <p className="text-sm text-gray-300">
   {post?.createdAt ? new Date(post.createdAt).toISOString().split('T')[0] : 'Invalid Date'}
+  {post?.user && (
+    <span className="ml-2">
+      by {post.user.firstName} {post.user.lastName}
+    </span>
+  )}
 </p>
 
           <div className="mt-4">
